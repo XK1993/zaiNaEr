@@ -1,5 +1,9 @@
 package com.example.zainaer;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.database.Cursor;
@@ -8,12 +12,15 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
 public class SearchActivity extends Activity {
 
     Button bnsearch;
     EditText etsearch;
+    ListView lv;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,27 +37,37 @@ public class SearchActivity extends Activity {
 
     public void onClick(View v) {
         // TODO Auto-generated method stub
-       String Name = etsearch.getText().toString().trim();
-       Query(Name);
+        ArrayList<Map<String,Object>> data = new ArrayList<Map<String,Object>>();
+
+    	String Name = etsearch.getText().toString().trim();
+    	String[] args = {Name};
+        data = Query(args);
+        lv = (ListView)findViewById(R.id.listview);
+        SimpleAdapter  adapter = new SimpleAdapter(SearchActivity.this,data,R.layout.buju, new String[] {"name","number","address"}
+        , new int[] {R.id.text1,R.id.text2,R.id.text3});
+        lv.setAdapter(adapter);
        }
     }
  
  //查询函数
- public void  Query(String name) {
-     
+ public ArrayList<Map<String, Object>>  Query(String[] args) {
+     ArrayList<Map<String, Object>> data = new  ArrayList<Map<String, Object>>();
     DBHelper dbHelper = new DBHelper(SearchActivity.this,"My_db",null,1);
     SQLiteDatabase db = dbHelper.getReadableDatabase();
-    Cursor cursor = db.query("linker", new String[] {"name","number","address"}, null, 
-            null, null, null, null);
+    String sql="select * from linker where name = ?";
+    Cursor cursor = db.rawQuery(sql, args);
     cursor.moveToFirst();
+    int cols=cursor.getColumnCount()-1;
     while(cursor.moveToNext()) {
-        String n = cursor.getString(cursor.getColumnIndex("name"));
-           if(n.equals(name)) {
-               DisplayToast("查找成功！");
-           } else {
-               DisplayToast("查无此人！");
-           }
+        for(int i=0;i<cols;i++) {
+        	HashMap<String, Object>  item = new HashMap<String, Object>();
+        	String cols_name =cursor.getColumnName(i);
+        	String cols_value =cursor.getString(cursor.getColumnIndex(cols_name));
+        	item.put(cols_name,cols_value);
+        	data.add(item);
+        }
     }
+	return data;
   }
  
 
